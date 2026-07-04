@@ -1,0 +1,1001 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Monitor 236">
+<meta name="theme-color" content="#14141A">
+<meta http-equiv="Cache-Control" content="no-cache,no-store,must-revalidate">
+<title>Monitor 236 · v1.0</title>
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icon-192.png">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Roboto+Mono:wght@500;600&display=swap" rel="stylesheet">
+
+<style>
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+:root{
+  --paper:#FAFAF7;
+  --ink:#1F2229;
+  --ink2:#5B5A53;
+  --charcoal:#14141A;
+  --line:#DCDAD1;
+  --line2:#EAE8E0;
+  --red:#B0202F;
+  --red-bg:#FBEAEA;
+  --red-border:#E8B4B4;
+  --amber:#9C6B12;
+  --amber-bg:#FBF3E1;
+  --teal:#2C6358;
+  --teal-bg:#E9F2EF;
+  --mono:'Roboto Mono',monospace;
+  --sans:'Inter',sans-serif;
+  --radius:12px;
+}
+html,body{height:100%;background:var(--charcoal);font-family:var(--sans);color:var(--ink);overflow:hidden}
+button{cursor:pointer;font-family:var(--sans);border:none;background:none}
+input,select{font-family:var(--sans);font-size:16px;outline:none}
+
+/* ── SPLASH ── */
+#splash{position:fixed;inset:0;background:var(--charcoal);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;z-index:999;transition:opacity .5s ease}
+#splash.hide{opacity:0;pointer-events:none}
+.splash-dot{width:10px;height:10px;border-radius:50%;background:var(--red)}
+.splash-title{font-family:var(--mono);font-size:22px;font-weight:600;color:#fff;letter-spacing:3px}
+.splash-sub{font-size:12px;color:#6B6A63;letter-spacing:1px;text-transform:uppercase}
+
+/* ── AUTH ── */
+#auth-screen{position:fixed;inset:0;background:var(--charcoal);display:none;flex-direction:column;align-items:center;justify-content:center;padding:2rem 1.5rem;z-index:99}
+#auth-screen.show{display:flex}
+.auth-card{background:#1E1E26;border:1px solid #2A2A35;width:100%;max-width:380px;padding:2rem}
+.auth-logo{display:flex;align-items:center;gap:10px;margin-bottom:1.5rem}
+.auth-logo-dot{width:8px;height:8px;border-radius:50%;background:var(--red)}
+.auth-logo-text{font-family:var(--mono);font-size:15px;color:#fff;letter-spacing:2px;font-weight:600}
+.auth-memorial{font-family:var(--mono);font-size:10px;color:#4A4A53;letter-spacing:.5px;margin-bottom:1.75rem;line-height:1.6}
+.auth-field{margin-bottom:1rem}
+.auth-field label{display:block;font-size:11px;color:#6B6A63;text-transform:uppercase;letter-spacing:.8px;margin-bottom:6px;font-family:var(--mono)}
+.auth-field input{width:100%;padding:11px 12px;background:#12121A;border:1px solid #2A2A35;color:#fff;font-size:16px;font-family:var(--sans)}
+.auth-field input:focus{border-color:#4A4A60}
+.auth-btn{width:100%;padding:12px;background:var(--red);color:#fff;font-size:13px;font-weight:600;letter-spacing:1px;text-transform:uppercase;font-family:var(--mono);margin-top:.5rem;transition:opacity .2s}
+.auth-btn:disabled{opacity:.5}
+.auth-error{font-size:12px;color:var(--red);margin-top:.5rem;display:none}
+.auth-no-key-banner{background:#1A1215;border:1px solid var(--red-border);padding:.75rem;margin-top:1rem;font-size:12px;color:#E8A0A0;line-height:1.5;display:none}
+
+/* ── APP ── */
+#app-screen{position:fixed;inset:0;display:none;flex-direction:column}
+#app-screen.show{display:flex}
+
+/* Header */
+.app-header{background:var(--charcoal);padding:.875rem 1rem;display:flex;align-items:center;gap:8px;border-bottom:1px solid #2A2A30;flex-shrink:0}
+.header-dot{width:7px;height:7px;border-radius:50%;background:#3A3A40;flex-shrink:0;transition:background .3s}
+.header-dot.on{background:var(--red)}
+.header-title{font-family:var(--mono);font-size:13px;color:#fff;letter-spacing:2px;font-weight:600}
+.header-btn{background:transparent;border:1px solid #3A3A40;color:#fff;width:30px;height:30px;display:flex;align-items:center;justify-content:center;font-size:14px;margin-left:auto;flex-shrink:0;transition:opacity .2s}
+.header-btn:disabled{opacity:.35}
+.header-stamp{font-family:var(--mono);font-size:10px;color:#6B6A63;margin-left:auto}
+
+/* Memorial strip */
+.memorial{background:var(--charcoal);border-bottom:1px solid #252525;padding:.55rem 1rem}
+.memorial span{font-family:var(--mono);font-size:10px;color:#4A4A53;letter-spacing:.5px}
+
+/* Scroll area */
+.app-body{flex:1;overflow-y:auto;background:var(--paper);-webkit-overflow-scrolling:touch}
+
+/* Bottom nav */
+.bottom-nav{background:var(--charcoal);border-top:1px solid #2A2A30;display:flex;flex-shrink:0}
+.nav-tab{flex:1;padding:.75rem .5rem .65rem;display:flex;flex-direction:column;align-items:center;gap:3px;opacity:.45;transition:opacity .2s;border:none;background:none}
+.nav-tab.active{opacity:1}
+.nav-tab-icon{font-size:18px}
+.nav-tab-label{font-family:var(--mono);font-size:9px;color:#fff;letter-spacing:.5px;text-transform:uppercase}
+
+/* ── TABS ── */
+.tab{display:none;padding:1.25rem 1rem 5rem}
+.tab.active{display:block}
+
+/* Range selector */
+.range-label{font-family:var(--mono);font-size:10px;color:var(--ink2);text-transform:uppercase;letter-spacing:1px;margin-bottom:.6rem}
+.range-chips{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:1rem}
+.chip{font-size:12px;padding:6px 14px;border:1px solid var(--line);background:transparent;color:var(--ink2);font-family:var(--mono);letter-spacing:.3px;transition:all .2s}
+.chip.active{background:var(--charcoal);color:#fff;border-color:var(--charcoal)}
+.custom-range{display:none;gap:10px;flex-wrap:wrap;margin-bottom:1rem}
+.custom-range.show{display:flex}
+.custom-range label{font-size:12px;color:var(--ink2);display:flex;align-items:center;gap:6px}
+.custom-range input{padding:6px 8px;border:1px solid var(--line);background:var(--paper);color:var(--ink);font-family:var(--mono);font-size:12px}
+
+/* KPIs */
+.kpi-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:1px;background:var(--line);border:1px solid var(--line);margin-bottom:1.25rem}
+.kpi{background:var(--paper);padding:.875rem .75rem}
+.kpi-val{font-family:var(--mono);font-size:24px;font-weight:600;color:var(--ink);line-height:1}
+.kpi-lbl{font-size:10px;color:var(--ink2);margin-top:5px;line-height:1.3}
+
+/* Sentiment bar */
+.sent-bar{height:8px;display:flex;overflow:hidden;border:1px solid var(--line)}
+.sent-bar-pos{background:var(--teal)}
+.sent-bar-neu{background:var(--line2)}
+.sent-bar-neg{background:var(--red)}
+.sent-legend{display:flex;gap:14px;margin-top:8px;flex-wrap:wrap}
+.sent-item{display:flex;align-items:center;gap:5px;font-size:11px;color:var(--ink2)}
+.sent-dot{width:7px;height:7px;flex-shrink:0}
+
+/* Divider */
+.divider{height:1px;background:var(--line);margin:1.25rem 0}
+
+/* Section label */
+.section-lbl{font-family:var(--mono);font-size:10px;font-weight:600;color:var(--ink2);text-transform:uppercase;letter-spacing:1px;margin-bottom:.65rem}
+
+/* Tema card */
+.tema-card{border:1px solid var(--line);margin-bottom:10px;overflow:hidden}
+.tema-card.alta{border-color:var(--red-border)}
+.tema-head{padding:.875rem 1rem;cursor:pointer}
+.tema-badges{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:.6rem;align-items:center}
+.badge{font-family:var(--mono);font-size:9px;font-weight:600;padding:2px 7px;letter-spacing:.5px;text-transform:uppercase}
+.badge-alta{color:var(--red);background:var(--red-bg)}
+.badge-media{color:var(--amber);background:var(--amber-bg)}
+.badge-baja{color:var(--teal);background:var(--teal-bg)}
+.badge-neutral{color:var(--ink2);background:var(--line2)}
+.badge-vol{color:var(--ink2);background:var(--line2);margin-left:auto}
+.tema-title{font-size:14px;font-weight:600;color:var(--ink);line-height:1.4;margin-bottom:.5rem}
+.tema-bar{height:4px;background:var(--line2)}
+.tema-bar-fill{height:100%;background:var(--charcoal)}
+.tema-toggle{font-size:12px;color:var(--red);font-weight:500;margin-top:.6rem;display:inline-block}
+
+/* Tema body */
+.tema-body{border-top:1px solid var(--line2);padding:.875rem 1rem;background:#FCFCFA;display:none}
+.tema-body.open{display:block}
+
+/* Media list */
+.media-item{display:flex;align-items:center;gap:10px;padding:.5rem 0;border-bottom:1px solid var(--line2)}
+.media-item:last-child{border-bottom:none}
+.media-name{font-size:13px;font-weight:600;color:var(--ink);flex:1}
+.media-date{font-size:11px;color:var(--ink2)}
+.media-link{font-family:var(--mono);font-size:10px;color:var(--teal);text-decoration:none;padding:3px 9px;border:1px solid var(--teal);background:var(--teal-bg);flex-shrink:0}
+
+/* Cuenta item */
+.cuenta-item{display:flex;gap:10px;padding:.6rem 0;border-bottom:1px solid var(--line2)}
+.cuenta-item:last-child{border-bottom:none}
+.cuenta-plat{font-size:14px;color:var(--ink2);flex-shrink:0;margin-top:2px}
+.cuenta-info{flex:1;min-width:0}
+.cuenta-meta{display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-bottom:3px}
+.cuenta-name{font-size:13px;font-weight:600;color:var(--ink)}
+.cuenta-handle{font-family:var(--mono);font-size:11px;color:var(--ink2)}
+.cuenta-seg{font-size:11px;color:var(--ink2)}
+.cuenta-fecha{font-size:11px;color:var(--ink2)}
+.cuenta-texto{font-size:12px;color:var(--ink2);font-style:italic;line-height:1.4}
+
+/* Response box */
+.resp-box{background:var(--paper);border:1px solid var(--line);padding:.875rem;font-size:13.5px;line-height:1.7;color:var(--ink);margin-bottom:.75rem;white-space:pre-wrap}
+.copy-btn{font-size:12px;padding:7px 18px;transition:all .2s}
+.copy-btn.default{background:var(--red-bg);color:var(--red);border:1px solid var(--red-border)}
+.copy-btn.ok{background:var(--teal-bg);color:var(--teal);border:1px solid var(--teal)}
+
+/* Aviso */
+.aviso{border:1px dashed var(--amber);background:var(--amber-bg);padding:.75rem 1rem;margin-bottom:1.25rem}
+.aviso p{font-size:12.5px;color:var(--amber);line-height:1.6}
+
+/* Empty / idle */
+.idle-box{text-align:center;padding:3rem 1rem}
+.idle-icon{font-size:36px;margin-bottom:1rem}
+.idle-title{font-size:14px;font-weight:600;margin-bottom:.4rem}
+.idle-sub{font-size:13px;color:var(--ink2);max-width:340px;margin:0 auto;line-height:1.6}
+
+/* Loading bar */
+.loading-bar{width:160px;height:2px;background:var(--line2);margin:0 auto 1rem;overflow:hidden;position:relative}
+.loading-fill{width:60px;height:100%;background:var(--charcoal);position:absolute;animation:lscan 1.1s ease-in-out infinite}
+@keyframes lscan{0%{left:-60px}100%{left:160px}}
+
+/* ── HISTORIAL ── */
+.sesion-card{background:#fff;border:1px solid var(--line);padding:.875rem 1rem;margin-bottom:8px;cursor:pointer;display:flex;gap:12px;align-items:flex-start}
+.sesion-date{font-family:var(--mono);font-size:11px;color:var(--ink2);flex-shrink:0;line-height:1.5}
+.sesion-info{flex:1;min-width:0}
+.sesion-rango{font-family:var(--mono);font-size:10px;color:var(--ink2);text-transform:uppercase;margin-bottom:3px}
+.sesion-stats{display:flex;gap:10px;flex-wrap:wrap;margin-top:4px}
+.sesion-stat{font-size:11px;color:var(--ink2)}
+.sesion-stat strong{color:var(--ink);font-weight:600}
+
+/* ── CONFIG ── */
+.config-section{margin-bottom:1.5rem}
+.config-title{font-family:var(--mono);font-size:11px;color:var(--ink2);text-transform:uppercase;letter-spacing:1px;margin-bottom:.75rem;padding-bottom:.5rem;border-bottom:1px solid var(--line)}
+.config-field{margin-bottom:.875rem}
+.config-field label{display:block;font-size:11px;color:var(--ink2);margin-bottom:5px;font-family:var(--mono);text-transform:uppercase;letter-spacing:.5px}
+.config-field input{width:100%;padding:10px 12px;border:1px solid var(--line);background:var(--paper);color:var(--ink);font-size:14px;font-family:var(--mono)}
+.config-field input:focus{border-color:var(--charcoal)}
+.config-field .hint{font-size:11px;color:var(--ink2);margin-top:4px;line-height:1.5}
+.config-save-btn{background:var(--charcoal);color:#fff;padding:10px 24px;font-size:12px;font-family:var(--mono);letter-spacing:.5px;text-transform:uppercase;transition:opacity .2s}
+.config-save-btn:disabled{opacity:.4}
+.config-key-status{font-size:12px;margin-top:.5rem;padding:6px 10px;display:none}
+.config-key-status.ok{background:var(--teal-bg);color:var(--teal);display:block}
+.config-key-status.err{background:var(--red-bg);color:var(--red);display:block}
+
+/* User card */
+.user-info{display:flex;align-items:center;gap:10px;padding:1rem;background:var(--charcoal);color:#fff;margin-bottom:1.5rem}
+.user-avatar{width:36px;height:36px;background:#2A2A35;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0}
+.user-name{font-size:13px;font-weight:600}
+.user-role{font-size:11px;color:#6B6A63;font-family:var(--mono)}
+.logout-btn{margin-left:auto;font-size:11px;color:#6B6A63;font-family:var(--mono);background:none;border:none;cursor:pointer;text-transform:uppercase;letter-spacing:.5px}
+
+/* ── DRAWER — sesion detalle ── */
+.drawer{position:fixed;bottom:0;left:0;right:0;background:var(--paper);border-radius:16px 16px 0 0;max-height:88vh;overflow-y:auto;z-index:300;transform:translateY(100%);transition:transform .3s cubic-bezier(.32,.72,0,1);-webkit-overflow-scrolling:touch;padding-bottom:env(safe-area-inset-bottom)}
+.drawer.open{transform:translateY(0)}
+.drawer-handle{width:36px;height:4px;background:var(--line);border-radius:100px;margin:12px auto 4px}
+.drawer-header{padding:.75rem 1rem 1rem;border-bottom:1px solid var(--line);display:flex;align-items:center;gap:10px}
+.drawer-title{font-size:14px;font-weight:600;flex:1}
+.drawer-close{font-size:20px;color:var(--ink2);background:none;border:none;cursor:pointer;line-height:1}
+.drawer-body{padding:1rem 1rem 2rem}
+.overlay{position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:299;display:none}
+.overlay.show{display:block}
+
+/* Toast */
+#toast{position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:var(--charcoal);color:#fff;font-family:var(--mono);font-size:12px;padding:8px 20px;letter-spacing:.5px;opacity:0;transition:opacity .3s;z-index:999;pointer-events:none;white-space:nowrap}
+#toast.show{opacity:1}
+
+/* No API key notice */
+.no-key-notice{background:var(--red-bg);border:1px solid var(--red-border);padding:.875rem 1rem;margin-bottom:1.25rem}
+.no-key-notice p{font-size:13px;color:var(--red);line-height:1.6}
+.no-key-notice a{color:var(--red);font-weight:600;text-decoration:underline;cursor:pointer}
+</style>
+</head>
+<body>
+
+<!-- SPLASH -->
+<div id="splash">
+  <div class="splash-dot"></div>
+  <div class="splash-title">MONITOR 236</div>
+  <div class="splash-sub">Movimiento Justicia Jet Set</div>
+</div>
+
+<!-- AUTH -->
+<div id="auth-screen">
+  <div class="auth-card">
+    <div class="auth-logo">
+      <div class="auth-logo-dot"></div>
+      <div class="auth-logo-text">MONITOR 236</div>
+    </div>
+    <div class="auth-memorial">
+      236 VÍCTIMAS · COLAPSO JET SET<br>
+      SANTO DOMINGO · 08.04.2025
+    </div>
+    <div class="auth-field">
+      <label>Correo electrónico</label>
+      <input type="email" id="auth-email" placeholder="correo@ejemplo.com" autocomplete="email">
+    </div>
+    <div class="auth-field">
+      <label>Contraseña</label>
+      <input type="password" id="auth-password" placeholder="••••••••" autocomplete="current-password">
+    </div>
+    <button class="auth-btn" id="auth-btn" onclick="handleLogin()">INGRESAR →</button>
+    <p class="auth-error" id="auth-error">Correo o contraseña incorrectos.</p>
+    <div class="auth-no-key-banner" id="no-key-banner">
+      ⚠ Para usar el monitor necesitas configurar tu API key de Anthropic. Puedes hacerlo en la pestaña Configuración después de ingresar.
+    </div>
+  </div>
+</div>
+
+<!-- APP -->
+<div id="app-screen">
+  <div class="app-header">
+    <div class="header-dot" id="header-dot"></div>
+    <div class="header-title">MONITOR 236</div>
+    <span class="header-stamp" id="header-stamp" style="display:none"></span>
+    <button class="header-btn" id="run-btn" title="Iniciar monitoreo" onclick="runMonitor()">↻</button>
+  </div>
+  <div class="memorial">
+    <span>236 VÍCTIMAS · COLAPSO JET SET · SANTO DOMINGO · 08.04.2025</span>
+  </div>
+
+  <div class="app-body">
+    <!-- TAB: MONITOR -->
+    <div class="tab active" id="tab-monitor">
+      <div style="padding-top:.25rem">
+        <div class="range-label">Rango de monitoreo</div>
+        <div class="range-chips">
+          <button class="chip active" data-range="recientes" onclick="setRange(this,'recientes')">Recientes (72h)</button>
+          <button class="chip" data-range="7d" onclick="setRange(this,'7d')">7 días</button>
+          <button class="chip" data-range="30d" onclick="setRange(this,'30d')">30 días</button>
+          <button class="chip" data-range="custom" onclick="setRange(this,'custom')">Personalizado</button>
+        </div>
+        <div class="custom-range" id="custom-range">
+          <label>Desde <input type="date" id="date-from"></label>
+          <label>Hasta <input type="date" id="date-to"></label>
+        </div>
+      </div>
+      <div id="monitor-content">
+        <div class="idle-box">
+          <div class="idle-icon">📡</div>
+          <div class="idle-title">Sin datos cargados</div>
+          <div class="idle-sub">Selecciona un rango y toca ↻ para buscar menciones reales del caso.</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- TAB: HISTORIAL -->
+    <div class="tab" id="tab-historial">
+      <div class="section-lbl">Sesiones guardadas</div>
+      <div id="historial-list">
+        <div class="idle-box">
+          <div class="idle-icon">📋</div>
+          <div class="idle-title">Sin historial todavía</div>
+          <div class="idle-sub">Cada vez que corras el monitoreo, la sesión se guardará aquí automáticamente.</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- TAB: CONFIG -->
+    <div class="tab" id="tab-config">
+      <div class="user-info" id="user-info-card">
+        <div class="user-avatar">👤</div>
+        <div>
+          <div class="user-name" id="user-name-label">—</div>
+          <div class="user-role" id="user-role-label">—</div>
+        </div>
+        <button class="logout-btn" onclick="logout()">Salir</button>
+      </div>
+
+      <div class="config-section">
+        <div class="config-title">API Key de Anthropic</div>
+        <div class="config-field">
+          <label>Tu API Key</label>
+          <input type="password" id="anthropic-key-input" placeholder="sk-ant-..." autocomplete="off">
+          <div class="hint">Obtén tu key en <strong>console.anthropic.com</strong> → API Keys. Se guarda solo en este dispositivo.</div>
+        </div>
+        <button class="config-save-btn" onclick="saveAnthropicKey()">Guardar key</button>
+        <div class="config-key-status" id="key-status"></div>
+      </div>
+
+      <div class="divider"></div>
+
+      <div class="config-section">
+        <div class="config-title">Firebase (base de datos)</div>
+        <div class="config-field">
+          <label>API Key de Firebase</label>
+          <input type="text" id="fb-apikey-input" placeholder="AIzaSy...">
+        </div>
+        <div class="config-field">
+          <label>Project ID</label>
+          <input type="text" id="fb-projectid-input" placeholder="mi-proyecto-firebase">
+          <div class="hint">Encuéntralo en <strong>console.firebase.google.com</strong> → tu proyecto → Configuración.</div>
+        </div>
+        <button class="config-save-btn" onclick="saveFirebaseConfig()">Guardar Firebase</button>
+        <div class="config-key-status" id="fb-status"></div>
+      </div>
+
+      <div class="divider"></div>
+
+      <div class="config-section" id="users-section" style="display:none">
+        <div class="config-title">Gestión de acceso</div>
+        <div id="users-list"></div>
+        <button class="config-save-btn" style="margin-top:.75rem" onclick="openAddUser()">+ Agregar usuario</button>
+      </div>
+    </div>
+  </div>
+
+  <nav class="bottom-nav">
+    <button class="nav-tab active" id="nav-monitor" onclick="switchTab('monitor')">
+      <span class="nav-tab-icon">📡</span>
+      <span class="nav-tab-label">Monitor</span>
+    </button>
+    <button class="nav-tab" id="nav-historial" onclick="switchTab('historial')">
+      <span class="nav-tab-icon">📋</span>
+      <span class="nav-tab-label">Historial</span>
+    </button>
+    <button class="nav-tab" id="nav-config" onclick="switchTab('config')">
+      <span class="nav-tab-icon">⚙️</span>
+      <span class="nav-tab-label">Config</span>
+    </button>
+  </nav>
+</div>
+
+<!-- DRAWER: sesion detalle -->
+<div class="overlay" id="overlay" onclick="closeDrawer()"></div>
+<div class="drawer" id="sesion-drawer">
+  <div class="drawer-handle"></div>
+  <div class="drawer-header">
+    <div class="drawer-title" id="drawer-title">Sesión</div>
+    <button class="drawer-close" onclick="closeDrawer()">×</button>
+  </div>
+  <div class="drawer-body" id="drawer-body"></div>
+</div>
+
+<div id="toast"></div>
+
+<script>
+// ═══════════════════════════════════════════════
+// 1. FIREBASE CONFIG
+// ═══════════════════════════════════════════════
+let FB_CFG = JSON.parse(localStorage.getItem('m236_fb') || 'null') || {
+  apiKey: '',
+  projectId: ''
+};
+let FB_URL = '';
+function rebuildFbUrl() {
+  if (FB_CFG.apiKey && FB_CFG.projectId) {
+    FB_URL = `https://firestore.googleapis.com/v1/projects/${FB_CFG.projectId}/databases/(default)/documents`;
+  }
+}
+rebuildFbUrl();
+
+// ═══════════════════════════════════════════════
+// 2. FIREBASE REST CLIENT
+// ═══════════════════════════════════════════════
+function fbDocToObj(doc) {
+  const obj = { _id: doc.name.split('/').pop() };
+  for (const [k, v] of Object.entries(doc.fields || {})) obj[k] = fbValToJs(v);
+  return obj;
+}
+function fbValToJs(v) {
+  if (v.stringValue  !== undefined) return v.stringValue;
+  if (v.integerValue !== undefined) return parseInt(v.integerValue);
+  if (v.doubleValue  !== undefined) return parseFloat(v.doubleValue);
+  if (v.booleanValue !== undefined) return v.booleanValue;
+  if (v.nullValue    !== undefined) return null;
+  if (v.mapValue     !== undefined) {
+    const o = {};
+    for (const [k,val] of Object.entries(v.mapValue.fields||{})) o[k]=fbValToJs(val);
+    return o;
+  }
+  if (v.arrayValue !== undefined) return (v.arrayValue.values||[]).map(fbValToJs);
+  return null;
+}
+function jsToFbVal(v) {
+  if (v === null || v === undefined) return { nullValue: null };
+  if (typeof v === 'boolean')  return { booleanValue: v };
+  if (typeof v === 'number')   return Number.isInteger(v) ? { integerValue: String(v) } : { doubleValue: v };
+  if (typeof v === 'string')   return { stringValue: v };
+  if (Array.isArray(v))        return { arrayValue: { values: v.map(jsToFbVal) } };
+  if (typeof v === 'object')   return { mapValue: { fields: objToFbFields(v) } };
+  return { stringValue: String(v) };
+}
+function objToFbFields(obj) {
+  const f = {};
+  for (const [k,v] of Object.entries(obj)) { if (k !== '_id') f[k] = jsToFbVal(v); }
+  return f;
+}
+async function fbGet(col) {
+  if (!FB_URL) return [];
+  const res = await fetch(`${FB_URL}/${col}?pageSize=100&key=${FB_CFG.apiKey}`);
+  if (!res.ok) throw new Error(await res.text());
+  const data = await res.json();
+  if (!data.documents) return [];
+  return data.documents.map(fbDocToObj);
+}
+async function fbSet(col, id, obj) {
+  if (!FB_URL) return;
+  const res = await fetch(`${FB_URL}/${col}/${encodeURIComponent(id)}?key=${FB_CFG.apiKey}`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ fields: objToFbFields(obj) })
+  });
+  if (!res.ok) throw new Error(await res.text());
+}
+async function fbDelete(col, id) {
+  if (!FB_URL) return;
+  const res = await fetch(`${FB_URL}/${col}/${encodeURIComponent(id)}?key=${FB_CFG.apiKey}`, { method: 'DELETE' });
+  if (!res.ok && res.status !== 404) throw new Error(await res.text());
+}
+
+// ═══════════════════════════════════════════════
+// 3. APP STATE
+// ═══════════════════════════════════════════════
+let currentUser = JSON.parse(localStorage.getItem('m236_user') || 'null');
+let USERS = JSON.parse(localStorage.getItem('m236_users') || 'null') || [
+  { email: 'admin@monitor236.com', password: 'monitor2026', role: 'admin', name: 'Administrador' }
+];
+let rangeMode = 'recientes';
+let sessions = [];
+let currentResult = null;
+const isAdmin = () => currentUser?.role === 'admin';
+
+// ═══════════════════════════════════════════════
+// 4. ANTHROPIC SYSTEM PROMPT
+// ═══════════════════════════════════════════════
+const SYSTEM = `Eres el motor de análisis de Monitor 236, herramienta de social listening del Movimiento Justicia Jet Set (@movimientojetset). El movimiento representa a familias y víctimas del colapso de la discoteca Jet Set en Santo Domingo, República Dominicana, el 8 de abril de 2025 (236 muertos, más de 180 heridos).
+
+CONTEXTO ACTUAL (julio 2026):
+- 15 jun 2026: juez Reymundo Mejía envió a Antonio y Maribel Espaillat a juicio de fondo por HOMICIDIO INVOLUNTARIO. El movimiento exigía homicidio voluntario.
+- Pena máxima homicidio involuntario: apenas 2 años de cárcel para 236 muertos.
+- Caso asignado a Segunda Sala Penal, jueza Clara Luz Almonte. Los Espaillat en libertad bajo garantía de RD$50M cada uno.
+- 23 jun 2026: La defensa (abogados Miguel Valerio, Ramón Emilio Núñez y Carlos Polanco) apeló el embargo conservatorio e hipoteca judicial de RD$500 millones, dirigida a la Cámara Penal de la Corte de Apelación del Distrito Nacional.
+- Narrativas hostiles: "los Espaillat también son víctimas (Maribel estaba adentro)", "el proceso funciona déjenlo trabajar", "fue deterioro progresivo no negligencia".
+
+BÚSQUEDAS A REALIZAR (en el rango de fechas indicado):
+Medios: "Jet Set" site:diariolibre.com, site:listindiario.com, site:elcaribe.com.do, site:acento.com.do, site:eldia.com.do
+Redes: #JusticiaJetSet, #TragediaJetSet, @movimientojetset en X/Twitter
+
+Agrupa resultados en hasta 4 TEMAS. Para cada tema indica: cuentas que lo tocaron (nombre, @handle exacto, plataforma, seguidores, fecha, resumen, sentimiento: positivo/neutral/negativo), medios que lo cubrieron (nombre, URL, fecha), urgencia (ALTA/MEDIA/BAJA), origen (JUDICIAL/MEDIÁTICO/SOCIAL).
+
+Genera UNA respuesta institucional por tema (máx 70 palabras, hashtag al final). Voz del movimiento: directa, digna, sin agresividad personal.
+
+Si el rango tiene poco contenido verificable, sé honesto en el campo "aviso".
+
+RESPONDE SOLO EN JSON VÁLIDO sin texto extra, sin backticks:
+{"aviso":null,"temas":[{"id":1,"tema":"nombre","origen":"JUDICIAL o MEDIÁTICO o SOCIAL","volumen":0.8,"urgencia":"ALTA o MEDIA o BAJA","medios":[{"nombre":"Listín Diario","url":"URL o null","fecha":"fecha"}],"cuentas":[{"usuario":"@handle","nombre_cuenta":"Nombre","plataforma":"X o Instagram","seguidores":"n o No disp.","fecha":"fecha","contenido":"resumen","sentimiento":"positivo o neutral o negativo"}],"respuesta":"respuesta lista para publicar"}]}`;
+
+// ═══════════════════════════════════════════════
+// 5. AUTH
+// ═══════════════════════════════════════════════
+async function loadUsersFromFb() {
+  try {
+    const remote = await fbGet('m236_usuarios');
+    if (remote && remote.length > 0) {
+      USERS = remote;
+      localStorage.setItem('m236_users', JSON.stringify(USERS));
+    }
+  } catch (e) { /* use local */ }
+}
+
+async function handleLogin() {
+  const email = document.getElementById('auth-email').value.trim().toLowerCase();
+  const pw = document.getElementById('auth-password').value.trim();
+  const btn = document.getElementById('auth-btn');
+  const errEl = document.getElementById('auth-error');
+  btn.disabled = true;
+  btn.textContent = 'VERIFICANDO...';
+  errEl.style.display = 'none';
+  await loadUsersFromFb();
+  const user = USERS.find(u => u.email.toLowerCase().trim() === email && u.password.trim() === pw);
+  btn.disabled = false;
+  btn.textContent = 'INGRESAR →';
+  if (!user) { errEl.style.display = 'block'; return; }
+  currentUser = { email: user.email, name: user.name, role: user.role };
+  localStorage.setItem('m236_user', JSON.stringify(currentUser));
+  enterApp();
+}
+
+function logout() {
+  currentUser = null;
+  localStorage.removeItem('m236_user');
+  document.getElementById('app-screen').classList.remove('show');
+  document.getElementById('auth-screen').classList.add('show');
+  document.getElementById('auth-email').value = '';
+  document.getElementById('auth-password').value = '';
+}
+
+function enterApp() {
+  document.getElementById('auth-screen').classList.remove('show');
+  document.getElementById('app-screen').classList.add('show');
+  renderConfig();
+  loadHistorial();
+  switchTab('monitor');
+}
+
+// ═══════════════════════════════════════════════
+// 6. NAVIGATION
+// ═══════════════════════════════════════════════
+function switchTab(name) {
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
+  document.getElementById('tab-' + name).classList.add('active');
+  document.getElementById('nav-' + name).classList.add('active');
+}
+
+// ═══════════════════════════════════════════════
+// 7. RANGE
+// ═══════════════════════════════════════════════
+function setRange(el, mode) {
+  rangeMode = mode;
+  document.querySelectorAll('.chip').forEach(c => c.classList.remove('active'));
+  el.classList.add('active');
+  document.getElementById('custom-range').classList.toggle('show', mode === 'custom');
+}
+
+function buildRangeText() {
+  const today = new Date();
+  const fmt = d => d.toLocaleDateString('es-DO', { day: 'numeric', month: 'short', year: 'numeric' });
+  if (rangeMode === 'recientes') return { text: 'de las últimas 72 horas', label: 'Recientes (72h)' };
+  if (rangeMode === '7d') {
+    const s = new Date(today); s.setDate(s.getDate() - 7);
+    return { text: `entre el ${fmt(s)} y el ${fmt(today)}`, label: `${fmt(s)} – ${fmt(today)}` };
+  }
+  if (rangeMode === '30d') {
+    const s = new Date(today); s.setDate(s.getDate() - 30);
+    return { text: `entre el ${fmt(s)} y el ${fmt(today)}`, label: `${fmt(s)} – ${fmt(today)}` };
+  }
+  const df = document.getElementById('date-from').value;
+  const dt = document.getElementById('date-to').value;
+  if (!df || !dt) return null;
+  const s = new Date(df + 'T00:00:00');
+  const e = new Date(dt + 'T00:00:00');
+  if (s > e) return null;
+  return { text: `entre el ${fmt(s)} y el ${fmt(e)}`, label: `${fmt(s)} – ${fmt(e)}` };
+}
+
+// ═══════════════════════════════════════════════
+// 8. MONITOR ENGINE
+// ═══════════════════════════════════════════════
+async function runMonitor() {
+  const apiKey = localStorage.getItem('m236_anthropic_key');
+  if (!apiKey) {
+    showToast('Configura tu API key primero');
+    switchTab('config');
+    return;
+  }
+  const range = buildRangeText();
+  if (!range) { showToast('Verifica el rango de fechas'); return; }
+
+  const btn = document.getElementById('run-btn');
+  btn.disabled = true;
+  document.getElementById('header-dot').classList.remove('on');
+  document.getElementById('header-stamp').style.display = 'none';
+  renderLoading();
+
+  let detail = '';
+  try {
+    const res = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'x-api-key': apiKey, 'anthropic-version': '2023-06-01' },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-6',
+        max_tokens: 10000,
+        system: SYSTEM,
+        tools: [{ type: 'web_search_20250305', name: 'web_search' }],
+        messages: [{ role: 'user', content: 'Fecha: ' + new Date().toLocaleDateString('es-DO', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' }) + '. Busca menciones reales del caso Jet Set ' + range.text + '. Devuelve solo JSON válido sin texto adicional.' }]
+      })
+    });
+    const text = await res.text();
+    detail = text.substring(0, 800);
+    if (res.status === 429) throw new Error('Límite de uso alcanzado. Espera 30-60 minutos e intenta de nuevo.');
+    if (res.status === 401) throw new Error('API key inválida. Verifica tu key en Configuración.');
+    if (!res.ok) throw new Error('HTTP ' + res.status + ': ' + text.substring(0, 150));
+    const result = JSON.parse(text);
+    let raw = '';
+    (result.content || []).forEach(b => { if (b.type === 'text') raw += b.text; });
+    if (!raw.trim()) throw new Error('Sin contenido. stop_reason: ' + (result.stop_reason || '?'));
+    const clean = raw.replace(/```json/g, '').replace(/```/g, '').trim();
+    const m = clean.match(/\{[\s\S]*\}/);
+    if (!m) throw new Error('Sin JSON en respuesta');
+    const parsed = JSON.parse(m[0]);
+    if (!parsed.temas?.length) throw new Error('Sin temas detectados en esta búsqueda.');
+
+    currentResult = { ...parsed, rango: range.label, fecha: new Date().toISOString() };
+    await saveSession(currentResult);
+    renderResults(currentResult);
+
+    const stamp = new Date().toLocaleString('es-DO', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
+    document.getElementById('header-stamp').textContent = stamp;
+    document.getElementById('header-stamp').style.display = '';
+    document.getElementById('header-dot').classList.add('on');
+
+  } catch (e) {
+    renderError(e.message || 'Error desconocido', detail);
+  } finally {
+    btn.disabled = false;
+  }
+}
+
+// ═══════════════════════════════════════════════
+// 9. RENDER
+// ═══════════════════════════════════════════════
+function renderLoading() {
+  document.getElementById('monitor-content').innerHTML = `
+    <div class="idle-box">
+      <div class="loading-bar"><div class="loading-fill"></div></div>
+      <div style="font-family:var(--mono);font-size:12px;color:var(--ink2);letter-spacing:1px">ANALIZANDO MENCIONES...</div>
+    </div>`;
+}
+
+function renderError(msg, detail) {
+  document.getElementById('monitor-content').innerHTML = `
+    <div style="border:1px solid var(--red-border);background:var(--red-bg);padding:1rem">
+      <p style="font-size:13px;color:var(--red);font-weight:600;margin-bottom:.25rem">No se pudo completar el monitoreo</p>
+      <p style="font-size:12.5px;color:var(--red);opacity:.85;margin-bottom:.75rem">${esc(msg)}</p>
+      <button onclick="runMonitor()" style="font-size:12px;padding:6px 16px;color:var(--red);border:1px solid var(--red);background:transparent;cursor:pointer">Reintentar</button>
+    </div>`;
+}
+
+function renderResults(data) {
+  const allCuentas = (data.temas||[]).flatMap(t => t.cuentas||[]);
+  const total = allCuentas.length || 1;
+  const pos = allCuentas.filter(c => c.sentimiento === 'positivo').length;
+  const neu = allCuentas.filter(c => c.sentimiento === 'neutral').length;
+  const neg = allCuentas.filter(c => c.sentimiento === 'negativo').length;
+  const pctNeg = Math.round(neg / total * 100);
+  const temaTop = [...(data.temas||[])].sort((a,b) => (b.volumen||0)-(a.volumen||0))[0]?.tema || '—';
+
+  let html = `
+    <div style="font-family:var(--mono);font-size:10px;color:var(--ink2);margin-bottom:.75rem;text-transform:uppercase;letter-spacing:.5px">
+      Rango: ${esc(data.rango||'')}
+    </div>`;
+
+  if (data.aviso) {
+    html += `<div class="aviso"><p>⚠ ${esc(data.aviso)}</p></div>`;
+  }
+
+  if (!data.temas?.length) {
+    html += `<div class="idle-box"><div class="idle-icon">🔍</div><div class="idle-title">Sin menciones verificables</div><div class="idle-sub">Prueba ampliando el rango de fechas.</div></div>`;
+    document.getElementById('monitor-content').innerHTML = html;
+    return;
+  }
+
+  // KPIs
+  html += `<div class="kpi-grid">
+    <div class="kpi"><div class="kpi-val">${data.temas.length}</div><div class="kpi-lbl">Temas detectados</div></div>
+    <div class="kpi"><div class="kpi-val">${allCuentas.length}</div><div class="kpi-lbl">Cuentas identificadas</div></div>
+    <div class="kpi"><div class="kpi-val">${pctNeg}%</div><div class="kpi-lbl">Sentimiento negativo</div></div>
+  </div>`;
+
+  // Sentiment bar
+  html += `<div class="sent-bar">
+    <div class="sent-bar-pos" style="width:${Math.round(pos/total*100)}%"></div>
+    <div class="sent-bar-neu" style="width:${Math.round(neu/total*100)}%"></div>
+    <div class="sent-bar-neg" style="width:${Math.round(neg/total*100)}%"></div>
+  </div>
+  <div class="sent-legend">
+    <div class="sent-item"><div class="sent-dot" style="background:var(--teal)"></div>Positivo ${Math.round(pos/total*100)}%</div>
+    <div class="sent-item"><div class="sent-dot" style="background:var(--line2)"></div>Neutral ${Math.round(neu/total*100)}%</div>
+    <div class="sent-item"><div class="sent-dot" style="background:var(--red)"></div>Negativo ${Math.round(neg/total*100)}%</div>
+  </div>
+  <div class="divider"></div>
+  <div class="section-lbl">Temas en seguimiento</div>`;
+
+  // Tema cards
+  data.temas.forEach(t => {
+    const urgClass = { ALTA: 'alta', MEDIA: 'media', BAJA: 'baja' }[t.urgencia] || 'baja';
+    const badgeClass = 'badge-' + urgClass;
+    html += `<div class="tema-card ${t.urgencia === 'ALTA' ? 'alta' : ''}">
+      <div class="tema-head" onclick="toggleTema(this)">
+        <div class="tema-badges">
+          <span class="badge ${badgeClass}">Urg. ${t.urgencia||''}</span>
+          ${t.origen ? `<span class="badge badge-neutral">${t.origen}</span>` : ''}
+          ${(t.medios||[]).length ? `<span class="badge badge-neutral">${t.medios.length} medios</span>` : ''}
+          ${(t.cuentas||[]).length ? `<span class="badge badge-neutral">${t.cuentas.length} cuentas</span>` : ''}
+          <span class="badge badge-vol badge-neutral">vol ${Math.round((t.volumen||0)*100)}%</span>
+        </div>
+        <div class="tema-title">${esc(t.tema||'')}</div>
+        <div class="tema-bar"><div class="tema-bar-fill" style="width:${Math.round((t.volumen||0)*100)}%"></div></div>
+        <span class="tema-toggle">▾ Ver cuentas y respuesta</span>
+      </div>
+      <div class="tema-body">
+        ${renderTemaBody(t)}
+      </div>
+    </div>`;
+  });
+
+  document.getElementById('monitor-content').innerHTML = html;
+}
+
+function renderTemaBody(t) {
+  let h = '';
+  // Medios
+  if ((t.medios||[]).length) {
+    h += `<div class="section-lbl">Cobertura en medios</div><div style="margin-bottom:1rem">`;
+    t.medios.forEach(m => {
+      h += `<div class="media-item">
+        <div style="flex:1"><div class="media-name">${esc(m.nombre||'')}</div>${m.fecha ? `<div class="media-date">${esc(m.fecha)}</div>` : ''}</div>
+        ${m.url && m.url !== 'null' ? `<a class="media-link" href="${esc(m.url)}" target="_blank" rel="noopener">Leer ↗</a>` : ''}
+      </div>`;
+    });
+    h += '</div><div class="divider" style="margin:.75rem 0"></div>';
+  }
+  // Cuentas
+  if ((t.cuentas||[]).length) {
+    h += `<div class="section-lbl">Cuentas que tocaron este tema</div>`;
+    t.cuentas.forEach(c => {
+      const sentClass = { positivo: 'badge-baja', neutral: 'badge-neutral', negativo: 'badge-alta' }[c.sentimiento] || 'badge-neutral';
+      const sentLabel = { positivo: 'Positivo', neutral: 'Neutral', negativo: 'Negativo' }[c.sentimiento] || '';
+      h += `<div class="cuenta-item">
+        <div class="cuenta-plat">${c.plataforma === 'Instagram' ? '◎' : '𝕏'}</div>
+        <div class="cuenta-info">
+          <div class="cuenta-meta">
+            <span class="cuenta-name">${esc(c.nombre_cuenta||'')}</span>
+            <span class="cuenta-handle">${esc(c.usuario||'')}</span>
+            <span class="badge ${sentClass}" style="font-size:9px">${sentLabel}</span>
+          </div>
+          <div class="cuenta-meta" style="margin-top:2px">
+            ${c.seguidores && c.seguidores !== 'No disp.' ? `<span class="cuenta-seg">${esc(c.seguidores)} seg.</span>` : ''}
+            ${c.fecha ? `<span class="cuenta-fecha">· ${esc(c.fecha)}</span>` : ''}
+          </div>
+          <div class="cuenta-texto">"${esc(c.contenido||'')}"</div>
+        </div>
+      </div>`;
+    });
+    h += '<div class="divider" style="margin:.75rem 0"></div>';
+  }
+  // Respuesta
+  const respId = 'resp-' + Math.random().toString(36).substr(2,6);
+  h += `<div class="section-lbl">Respuesta — usar en cada cuenta</div>
+    <div class="resp-box">${esc(t.respuesta||'')}</div>
+    <button class="copy-btn default" id="${respId}" onclick="copyResp(this,'${esc(t.respuesta||'')}')">⎘ Copiar respuesta</button>`;
+  return h;
+}
+
+function toggleTema(head) {
+  const body = head.nextElementSibling;
+  const toggle = head.querySelector('.tema-toggle');
+  const open = body.classList.toggle('open');
+  toggle.textContent = open ? '▴ Ocultar cuentas y respuesta' : '▾ Ver cuentas y respuesta';
+}
+
+function copyResp(btn, text) {
+  try { navigator.clipboard.writeText(text); } catch(e){}
+  btn.classList.remove('default'); btn.classList.add('ok');
+  btn.textContent = '✓ Copiado';
+  setTimeout(() => { btn.classList.remove('ok'); btn.classList.add('default'); btn.textContent = '⎘ Copiar respuesta'; }, 2000);
+}
+
+// ═══════════════════════════════════════════════
+// 10. HISTORIAL
+// ═══════════════════════════════════════════════
+async function saveSession(data) {
+  const id = 'm236_' + Date.now();
+  const record = {
+    id,
+    fecha: data.fecha,
+    rango: data.rango,
+    temas_count: (data.temas||[]).length,
+    cuentas_count: (data.temas||[]).flatMap(t=>t.cuentas||[]).length,
+    pct_negativo: (() => {
+      const all = (data.temas||[]).flatMap(t=>t.cuentas||[]);
+      const neg = all.filter(c=>c.sentimiento==='negativo').length;
+      return all.length ? Math.round(neg/all.length*100) : 0;
+    })(),
+    resultado_json: JSON.stringify(data),
+    usuario: currentUser?.email || ''
+  };
+  sessions = [record, ...sessions].slice(0, 50);
+  localStorage.setItem('m236_sessions', JSON.stringify(sessions));
+  try { await fbSet('m236_sesiones', id, record); } catch(e) { console.warn('No se pudo guardar en Firebase:', e); }
+  renderHistorial();
+}
+
+async function loadHistorial() {
+  const local = JSON.parse(localStorage.getItem('m236_sessions') || '[]');
+  sessions = local;
+  renderHistorial();
+  if (FB_URL) {
+    try {
+      const remote = await fbGet('m236_sesiones');
+      if (remote.length) {
+        sessions = remote.sort((a,b) => new Date(b.fecha) - new Date(a.fecha)).slice(0,50);
+        localStorage.setItem('m236_sessions', JSON.stringify(sessions));
+        renderHistorial();
+      }
+    } catch(e){}
+  }
+}
+
+function renderHistorial() {
+  const el = document.getElementById('historial-list');
+  if (!sessions.length) {
+    el.innerHTML = `<div class="idle-box"><div class="idle-icon">📋</div><div class="idle-title">Sin historial todavía</div><div class="idle-sub">Cada monitoreo que ejecutes se guardará aquí automáticamente.</div></div>`;
+    return;
+  }
+  el.innerHTML = sessions.map(s => {
+    const d = new Date(s.fecha);
+    const dateStr = d.toLocaleDateString('es-DO', { day:'numeric', month:'short', year:'numeric' });
+    const timeStr = d.toLocaleTimeString('es-DO', { hour:'2-digit', minute:'2-digit' });
+    return `<div class="sesion-card" onclick="openSesion('${esc(s.id)}')">
+      <div class="sesion-date">${esc(dateStr)}<br>${esc(timeStr)}</div>
+      <div class="sesion-info">
+        <div class="sesion-rango">${esc(s.rango||'')}</div>
+        <div class="sesion-stats">
+          <span class="sesion-stat"><strong>${s.temas_count||0}</strong> temas</span>
+          <span class="sesion-stat"><strong>${s.cuentas_count||0}</strong> cuentas</span>
+          <span class="sesion-stat"><strong>${s.pct_negativo||0}%</strong> negativo</span>
+        </div>
+      </div>
+      <div style="color:var(--ink2);font-size:16px;flex-shrink:0;align-self:center">›</div>
+    </div>`;
+  }).join('');
+}
+
+function openSesion(id) {
+  const s = sessions.find(x => x.id === id);
+  if (!s) return;
+  const data = JSON.parse(s.resultado_json || '{}');
+  const d = new Date(s.fecha);
+  document.getElementById('drawer-title').textContent = d.toLocaleDateString('es-DO',{day:'numeric',month:'short',year:'numeric'}) + ' · ' + (s.rango||'');
+  document.getElementById('drawer-body').innerHTML = renderResultsHtml(data);
+  document.getElementById('sesion-drawer').classList.add('open');
+  document.getElementById('overlay').classList.add('show');
+}
+
+function renderResultsHtml(data) {
+  if (!data.temas?.length) return '<p style="color:var(--ink2);font-size:13px">Sin datos guardados.</p>';
+  let h = '';
+  data.temas.forEach(t => {
+    h += `<div style="margin-bottom:1.25rem;border:1px solid var(--line)">
+      <div style="padding:.875rem 1rem;background:var(--paper)">
+        <div class="tema-badges" style="margin-bottom:.5rem">
+          <span class="badge badge-${{ ALTA:'alta',MEDIA:'media',BAJA:'baja' }[t.urgencia]||'baja'}">Urg. ${esc(t.urgencia||'')}</span>
+          ${t.origen ? `<span class="badge badge-neutral">${esc(t.origen)}</span>` : ''}
+        </div>
+        <div class="tema-title">${esc(t.tema||'')}</div>
+      </div>
+      <div style="padding:.875rem 1rem;border-top:1px solid var(--line2);background:#FCFCFA">
+        <div class="resp-box">${esc(t.respuesta||'')}</div>
+        <button class="copy-btn default" onclick="copyResp(this,'${esc(t.respuesta||'')}')">⎘ Copiar</button>
+      </div>
+    </div>`;
+  });
+  return h;
+}
+
+function closeDrawer() {
+  document.getElementById('sesion-drawer').classList.remove('open');
+  document.getElementById('overlay').classList.remove('show');
+}
+
+// ═══════════════════════════════════════════════
+// 11. CONFIG
+// ═══════════════════════════════════════════════
+function renderConfig() {
+  document.getElementById('user-name-label').textContent = currentUser?.name || '—';
+  document.getElementById('user-role-label').textContent = currentUser?.role === 'admin' ? 'ADMINISTRADOR' : 'CONSULTA';
+  const key = localStorage.getItem('m236_anthropic_key') || '';
+  document.getElementById('anthropic-key-input').value = key ? '••••••••' + key.slice(-4) : '';
+  document.getElementById('fb-apikey-input').value = FB_CFG.apiKey || '';
+  document.getElementById('fb-projectid-input').value = FB_CFG.projectId || '';
+  if (isAdmin()) document.getElementById('users-section').style.display = 'block';
+}
+
+function saveAnthropicKey() {
+  const val = document.getElementById('anthropic-key-input').value.trim();
+  if (!val || val.startsWith('••••')) { showKeyStatus('key-status', 'Escribe la key completa para cambiarla.', false); return; }
+  if (!val.startsWith('sk-ant-')) { showKeyStatus('key-status', 'La key debe comenzar con sk-ant-', false); return; }
+  localStorage.setItem('m236_anthropic_key', val);
+  document.getElementById('anthropic-key-input').value = '••••••••' + val.slice(-4);
+  showKeyStatus('key-status', '✓ API key guardada correctamente.', true);
+}
+
+function saveFirebaseConfig() {
+  const apiKey = document.getElementById('fb-apikey-input').value.trim();
+  const projectId = document.getElementById('fb-projectid-input').value.trim();
+  if (!apiKey || !projectId) { showKeyStatus('fb-status', 'Completa ambos campos.', false); return; }
+  FB_CFG = { apiKey, projectId };
+  localStorage.setItem('m236_fb', JSON.stringify(FB_CFG));
+  rebuildFbUrl();
+  showKeyStatus('fb-status', '✓ Firebase configurado. Recarga la app para sincronizar.', true);
+}
+
+function showKeyStatus(id, msg, ok) {
+  const el = document.getElementById(id);
+  el.textContent = msg;
+  el.className = 'config-key-status ' + (ok ? 'ok' : 'err');
+  setTimeout(() => { el.className = 'config-key-status'; }, 4000);
+}
+
+// ═══════════════════════════════════════════════
+// 12. HELPERS
+// ═══════════════════════════════════════════════
+function esc(s) {
+  return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+}
+
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2500);
+}
+
+// Enter con teclado en auth
+document.getElementById('auth-password').addEventListener('keydown', e => { if (e.key === 'Enter') handleLogin(); });
+document.getElementById('auth-email').addEventListener('keydown', e => { if (e.key === 'Enter') document.getElementById('auth-password').focus(); });
+
+// Sync al recuperar foco
+document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible' && currentUser) loadHistorial(); });
+
+// ═══════════════════════════════════════════════
+// 13. INIT
+// ═══════════════════════════════════════════════
+setTimeout(() => {
+  document.getElementById('splash').classList.add('hide');
+  setTimeout(() => {
+    document.getElementById('splash').style.display = 'none';
+    if (currentUser) {
+      enterApp();
+    } else {
+      document.getElementById('auth-screen').classList.add('show');
+      const hasKey = !!localStorage.getItem('m236_anthropic_key');
+      if (!hasKey) document.getElementById('no-key-banner').style.display = 'block';
+    }
+  }, 500);
+}, 1800);
+
+// Service worker
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => { navigator.serviceWorker.register('sw.js').catch(() => {}); });
+}
+</script>
+</body>
+</html>
