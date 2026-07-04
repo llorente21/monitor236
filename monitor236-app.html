@@ -632,8 +632,7 @@ async function runMonitor() {
         model: 'claude-sonnet-4-6',
         max_tokens: 10000,
         system: SYSTEM,
-        tools: [{ type: 'web_search_20250305', name: 'web_search' }],
-        messages: [{ role: 'user', content: 'Fecha: ' + new Date().toLocaleDateString('es-DO', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' }) + '. Busca menciones reales del caso Jet Set ' + range.text + '. Devuelve solo JSON válido sin texto adicional.' }]
+        messages: [{ role: 'user', content: 'Fecha: ' + new Date().toLocaleDateString('es-DO', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' }) + '. Analiza el caso Jet Set ' + range.text + ' y genera un análisis completo con temas reales en circulación, cuentas y medios que los han cubierto, basándote en el contexto actual del caso que conoces. Devuelve solo JSON válido sin texto adicional.' }]
       })
     });
     const text = await res.text();
